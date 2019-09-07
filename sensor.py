@@ -45,15 +45,18 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 def get_state(url, username, password) :
 
     services = dict()
-    try: 
-      resp = requests.get(url, auth=requests.auth.HTTPDigestAuth(username,password), timeout=2)
-      root = xml.etree.ElementTree.fromstring(resp.text)
-      for o in root.findall("object") :
-        name = o.attrib.get('name') 
-        if 'Service Status' in name :
-          for e in o.findall("./parameter[@name='CallState']/value") :
-            state = e.attrib.get('current').split()[0] # take the first word
-            services[name] = state
+    try:
+        resp = requests.get(url, auth=requests.auth.HTTPDigestAuth(username,password), timeout=2)
+        root = xml.etree.ElementTree.fromstring(resp.text)
+        for models in root.iter('model'):
+            if models.attrib["reboot_req"]:
+                services["Reboot Required"] = models.attrib["reboot_req"]
+        for o in root.findall("object") :
+            name = o.attrib.get('name') 
+            if 'Service Status' in name :
+                for e in o.findall("./parameter[@name='CallState']/value") :
+                    state = e.attrib.get('current').split()[0] # take the first word
+                    services[name] = state
     except requests.exceptions.RequestException as e:
       _LOGGER.error(e)
     return services
@@ -62,14 +65,14 @@ def get_line_state(url, username, password) :
 
     services = dict()
     try: 
-      resp = requests.get(url, auth=requests.auth.HTTPDigestAuth(username,password), timeout=2)
-      root = xml.etree.ElementTree.fromstring(resp.text)
-      for o in root.findall("object") :
-        name = o.attrib.get('name') 
-        if 'Port Status' in name :
-          for e in o.findall("./parameter[@name='State']/value") :
-            state = e.attrib.get('current')# take the whole string
-            services[name] = state
+        resp = requests.get(url, auth=requests.auth.HTTPDigestAuth(username,password), timeout=2)
+        root = xml.etree.ElementTree.fromstring(resp.text)
+        for o in root.findall("object") :
+            name = o.attrib.get('name') 
+            if 'Port Status' in name :
+                for e in o.findall("./parameter[@name='State']/value") :
+                    state = e.attrib.get('current')# take the whole string
+                    services[name] = state
     except requests.exceptions.RequestException as e:
       _LOGGER.error(e)
     return services
