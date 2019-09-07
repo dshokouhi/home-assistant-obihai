@@ -6,8 +6,9 @@ Currently tested on obi110. To install, put the `__init__.py` and `sensor.py` un
 
 
 in the configuration.yaml add
+```
 sensor:
   - platform: obihai
     host: <IP of obihai>
     password: <password>
-
+```
