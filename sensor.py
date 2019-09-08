@@ -7,6 +7,7 @@ https://home-assistant.io/components/sensor.obihai/
 import logging
 
 import voluptuous as vol
+from datetime import timedelta
 
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import STATE_UNKNOWN
@@ -23,7 +24,7 @@ from urllib.parse import urljoin
 
 _LOGGER = logging.getLogger(__name__)
 
-#DEPENDENCIES = ['obihai']
+SCAN_INTERVAL = timedelta(seconds=5)
 
 DEFAULT_STATUS_PATH = 'DI_S_.xml'
 DEFAULT_LINE_PATH = 'PI_FXS_1_Stats.xml'
@@ -73,6 +74,9 @@ def get_line_state(url, username, password) :
                 for e in o.findall("./parameter[@name='State']/value") :
                     state = e.attrib.get('current')# take the whole string
                     services[name] = state
+                for x in o.findall("./parameter[@name='LastCallerInfo']/value"):
+                    state = x.attrib.get('current')
+                    services["Last Caller Info"] = state
     except requests.exceptions.RequestException as e:
       _LOGGER.error(e)
     return services
