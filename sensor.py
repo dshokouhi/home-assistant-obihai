@@ -60,9 +60,16 @@ def get_state(url, username, password) :
                         state = e.attrib.get('current').split()[0] # take the first word
                         services[name] = state
                 else:
-                    for e in o.findall("./parameter[@name='CallState']/value") :
+                    for e in o.findall("./parameter[@name='Status']/value") :
                         state = e.attrib.get('current').split()[0] # take the first word
-                        services[name] = state
+                        if state != 'Service':
+                            for x in o.findall("./parameter[@name='CallState']/value") :
+                                state = x.attrib.get('current').split()[0] # take the first word
+                                services[name] = state
+            if 'Product Information' in name:
+                for e in o.findall("./parameter[@name='UpTime']/value") :
+                        state = e.attrib.get('current') # take the first word
+                        services["UpTime"] = state
     except requests.exceptions.RequestException as e:
       _LOGGER.error(e)
     return services
@@ -125,11 +132,12 @@ class ObihaiServiceSensors(Entity):
         self._password = password
         self._service_name = service_name
         self._state = None
+        self._name = "Obihai " + '{}'.format(self._service_name)
 
     @property
     def name(self):
         """Return the name of the sensor."""
-        return '{}'.format(self._service_name)
+        return self._name
 
     @property
     def state(self):
