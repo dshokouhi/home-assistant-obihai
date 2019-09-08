@@ -55,9 +55,14 @@ def get_state(url, username, password) :
         for o in root.findall("object") :
             name = o.attrib.get('name') 
             if 'Service Status' in name :
-                for e in o.findall("./parameter[@name='CallState']/value") :
-                    state = e.attrib.get('current').split()[0] # take the first word
-                    services[name] = state
+                if 'OBiTALK Service Status' in name:
+                    for e in o.findall("./parameter[@name='Status']/value") :
+                        state = e.attrib.get('current').split()[0] # take the first word
+                        services[name] = state
+                else:
+                    for e in o.findall("./parameter[@name='CallState']/value") :
+                        state = e.attrib.get('current').split()[0] # take the first word
+                        services[name] = state
     except requests.exceptions.RequestException as e:
       _LOGGER.error(e)
     return services
