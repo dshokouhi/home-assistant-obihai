@@ -12,29 +12,22 @@ from datetime import timedelta
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.const import (
-    CONF_PATH, CONF_HOST, CONF_PASSWORD, CONF_USERNAME)
+    CONF_HOST, CONF_PASSWORD, CONF_USERNAME)
 
 from homeassistant.helpers.entity import Entity
 import homeassistant.helpers.config_validation as cv
-import requests
-import xml.etree.ElementTree
-import re
-from urllib.parse import urljoin
-
+from pyobihai import PyObihai
 
 _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(seconds=5)
 
-DEFAULT_STATUS_PATH = 'DI_S_.xml'
-DEFAULT_LINE_PATH = 'PI_FXS_1_Stats.xml'
+DOMAIN = 'Obihai'
 DEFAULT_USERNAME = 'admin'
 DEFAULT_PASSWORD = 'admin'
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_HOST):
-        cv.string,
-    vol.Optional(CONF_PATH, default=DEFAULT_STATUS_PATH):
         cv.string,
     vol.Optional(CONF_USERNAME, default=DEFAULT_USERNAME):
         cv.string,
@@ -43,80 +36,30 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 })
 
 
-def get_state(url, username, password) :
-
-    services = dict()
-    try:
-        resp = requests.get(url, auth=requests.auth.HTTPDigestAuth(username,password), timeout=2)
-        root = xml.etree.ElementTree.fromstring(resp.text)
-        for models in root.iter('model'):
-            if models.attrib["reboot_req"]:
-                services["Reboot Required"] = models.attrib["reboot_req"]
-        for o in root.findall("object") :
-            name = o.attrib.get('name') 
-            if 'Service Status' in name :
-                if 'OBiTALK Service Status' in name:
-                    for e in o.findall("./parameter[@name='Status']/value") :
-                        state = e.attrib.get('current').split()[0] # take the first word
-                        services[name] = state
-                else:
-                    for e in o.findall("./parameter[@name='Status']/value") :
-                        state = e.attrib.get('current').split()[0] # take the first word
-                        if state != 'Service':
-                            for x in o.findall("./parameter[@name='CallState']/value") :
-                                state = x.attrib.get('current').split()[0] # take the first word
-                                services[name] = state
-            if 'Product Information' in name:
-                for e in o.findall("./parameter[@name='UpTime']/value") :
-                        state = e.attrib.get('current') # take the first word
-                        services["UpTime"] = state
-    except requests.exceptions.RequestException as e:
-      _LOGGER.error(e)
-    return services
-
-def get_line_state(url, username, password) :
-
-    services = dict()
-    try: 
-        resp = requests.get(url, auth=requests.auth.HTTPDigestAuth(username,password), timeout=2)
-        root = xml.etree.ElementTree.fromstring(resp.text)
-        for o in root.findall("object") :
-            name = o.attrib.get('name') 
-            if 'Port Status' in name :
-                for e in o.findall("./parameter[@name='State']/value") :
-                    state = e.attrib.get('current')# take the whole string
-                    services[name] = state
-                for x in o.findall("./parameter[@name='LastCallerInfo']/value"):
-                    state = x.attrib.get('current')
-                    services["Last Caller Info"] = state
-    except requests.exceptions.RequestException as e:
-      _LOGGER.error(e)
-    return services
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Obihai sensor platform."""
 
-    server_origin = '{}://{}'.format('http', config[CONF_HOST])
-    url = urljoin(server_origin, config[CONF_PATH])
-    url2 = urljoin(server_origin, DEFAULT_LINE_PATH)
-
     username = config.get(CONF_USERNAME, None)
     password = config.get(CONF_PASSWORD, None)
+    host = config.get(CONF_HOST, None)
 
     sensors = []
 
-    services = get_state(url,username,password)
+    pyobihai = PyObihai()
 
-    services2 = get_line_state(url2,username,password)
+    services = pyobihai.get_state(host,username,password)
+
+    services2 = pyobihai.get_line_state(host,username,password)
 
     for key, value in services.items():
         sensors.append(
-	    ObihaiServiceSensors(url, username, password, key, )
+	    ObihaiServiceSensors(host, username, password, key, )
         )
 
     for key, value in services2.items():
         sensors.append(
-	    ObihaiServiceSensors(url2, username, password, key, )
+	    ObihaiServiceSensors(host, username, password, key, )
         )
 
     add_devices(sensors)
@@ -125,14 +68,15 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 class ObihaiServiceSensors(Entity):
     """Get the status of each Obihai Lines."""
 
-    def __init__(self, url, username, password, service_name):
+    def __init__(self, host, username, password, service_name):
         """Initialize monitor sensor."""
-        self._url = url
+        self._host = host
         self._username = username
         self._password = password
         self._service_name = service_name
         self._state = None
-        self._name = "Obihai " + '{}'.format(self._service_name)
+        self._name = '{} {}'.format(DOMAIN, self._service_name)
+        self._pyobihai = PyObihai()
 
     @property
     def name(self):
@@ -146,7 +90,7 @@ class ObihaiServiceSensors(Entity):
 
     def update(self):
         """Update the sensor."""
-        services = get_state(self._url, self._username, self._password)
+        services = self._pyobihai.get_state(self._host, self._username, self._password)
 
         if self._service_name in services:
             if services[self._service_name] is None:
@@ -154,7 +98,7 @@ class ObihaiServiceSensors(Entity):
             else:
                 self._state = services[self._service_name]
 
-        services = get_line_state(self._url, self._username, self._password)
+        services = self._pyobihai.get_line_state(self._host, self._username, self._password)
 
         if self._service_name in services:
             if services[self._service_name] is None:
