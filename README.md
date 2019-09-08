@@ -14,6 +14,6 @@ sensor:
     password: <password>
 ```
 
-`sensor.port_status` will be either `On Hook` `Off Hook` or `Ringing` (maybe something else too)
+`sensor.obihai_port_status` will be either `On Hook` `Off Hook` or `Ringing` (maybe something else too)
 
 The other sensors will be `0` if no active calls and `1` if there is an active call (number may be higher if you have more lines on the same SP line)
