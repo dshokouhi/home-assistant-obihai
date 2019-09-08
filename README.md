@@ -1,7 +1,7 @@
 # home-assistant-obihai
 Obihai sensor for home-assistant
 
-Currently tested on obi110 and obi200. To install, place `__init__.py` and `sensor.py` files under:
+Currently tested on obi110 and obi200. To install, place all files and folders under:
 
 `<config_dir>/custom_components/obihai/`
 
