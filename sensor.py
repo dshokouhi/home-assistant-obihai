@@ -16,7 +16,7 @@ from homeassistant.const import (
 
 from homeassistant.helpers.entity import Entity
 import homeassistant.helpers.config_validation as cv
-from pyobihai import PyObihai
+from .pyobihai import PyObihai
 
 _LOGGER = logging.getLogger(__name__)
 
