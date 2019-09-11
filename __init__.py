@@ -1,1 +1,1 @@
-"""Obihai"""
+"""The Obihai integration."""
