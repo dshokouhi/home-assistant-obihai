@@ -1,5 +1,5 @@
-# home-assistant-obihai
-Obihai sensor for home-assistant
+# Obihai custom component
+Obihai sensor for Home Assistant - All code current with release 0.99
 
 Currently tested on obi110 and obi200. To install, place all files and folders under:
 
