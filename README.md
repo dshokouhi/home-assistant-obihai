@@ -13,6 +13,7 @@ sensor:
     host: <IP of obihai>
     password: <password>
 ```
+note if using the user account you need to add `username: user` to the configuration.
 
 `sensor.obihai_port_status` will be either `On Hook` `Off Hook` or `Ringing` (maybe something else too)
 
