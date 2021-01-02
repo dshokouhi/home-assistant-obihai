@@ -1,7 +1,7 @@
 # Obihai custom component
-Obihai sensor for Home Assistant - All code current with release 0.99
+Obihai sensor for Home Assistant - All code current with release 2020.12
 
-Currently tested on obi110 and obi200. To install, place all files and folders under:
+Currently tested on obi110 and obi200. To install, place `__init__.py` `manifest.json` and `sensor.py` under:
 
 `<config_dir>/custom_components/obihai/`
 
